@@ -1,0 +1,47 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id "me.champeau.jmh" version "0.7.2"
+}
+
+group = 'xfacthd.pnj'
+version = '1.0-SNAPSHOT'
+
+project.ext.lwjglVersion = "3.3.3"
+project.ext.lwjglNatives = "natives-windows"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+
+    testImplementation "org.lwjgl:lwjgl"
+    testImplementation "org.lwjgl:lwjgl-stb"
+    testImplementation "org.lwjgl:lwjgl-xxhash"
+    testRuntimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-xxhash::$lwjglNatives"
+}
+
+test {
+
+}
+
+final var INC_ONLY_FROM_DISK = [ '(PNJ|STBI)_read(\\\\d)+bitFile' ];
+final var INC_ONLY_FROM_MEMORY = [ '(PNJ|STBI)_read(\\d)+bitBuffer' ];
+final var INC_ONLY_RGBA = [ 'PNJTruecolorAlphaDirectBenchmark' ]
+
+jmh {
+    includes = INC_ONLY_FROM_MEMORY
+    fork = 1
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+}
