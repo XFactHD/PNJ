@@ -1,6 +1,7 @@
 package xfacthd.pnj.impl.decoder;
 
 import xfacthd.pnj.api.data.Image;
+import xfacthd.pnj.api.data.PngHeader;
 import xfacthd.pnj.api.define.DecoderOption;
 import xfacthd.pnj.impl.data.*;
 import xfacthd.pnj.impl.decoder.chunkdecoder.*;
@@ -97,6 +98,50 @@ public final class PNJDecoderImpl
         catch (Throwable t)
         {
             throw new IOException("Encountered an error while decoding PNG", t);
+        }
+    }
+
+    public static PngHeader decodeHeaderOnly(Path path) throws IOException
+    {
+        try (InputStream stream = Files.newInputStream(path))
+        {
+            return decodeHeaderOnly(stream);
+        }
+    }
+
+    public static PngHeader decodeHeaderOnly(InputStream stream) throws IOException
+    {
+        try
+        {
+            byte[] magic = stream.readNBytes(8);
+            if (!Arrays.equals(magic, Constants.PNG_MAGIC))
+            {
+                throw new IOException("PNG magic doesn't match");
+            }
+
+            ChunkList chunks = new ChunkList();
+
+            readChunk(stream, chunks);
+            if (chunks.isEmpty())
+            {
+                throw new IOException("Failed to read first chunk");
+            }
+
+            Chunk chunk = chunks.get(0);
+            if (chunk.type() != ChunkType.IHDR)
+            {
+                throw new IOException("First chunk must be an IHDR chunk");
+            }
+
+            return HeaderDecoder.decodeHeaderOnly(chunk);
+        }
+        catch (IOException e)
+        {
+            throw e;
+        }
+        catch (Throwable t)
+        {
+            throw new IOException("Encountered an error while decoding PNG header", t);
         }
     }
 

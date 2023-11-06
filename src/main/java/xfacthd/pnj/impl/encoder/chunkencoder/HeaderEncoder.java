@@ -1,6 +1,6 @@
 package xfacthd.pnj.impl.encoder.chunkencoder;
 
-import xfacthd.pnj.api.define.ColorFormat;
+import xfacthd.pnj.api.define.*;
 import xfacthd.pnj.impl.define.*;
 import xfacthd.pnj.impl.encoder.PNJEncoderImpl;
 import xfacthd.pnj.impl.encoder.data.EncodingImage;

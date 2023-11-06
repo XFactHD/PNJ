@@ -1,7 +1,8 @@
 package xfacthd.pnj.impl.decoder.data;
 
 import xfacthd.pnj.api.data.Image;
-import xfacthd.pnj.api.define.ColorFormat;
+import xfacthd.pnj.api.data.PngHeader;
+import xfacthd.pnj.api.define.*;
 import xfacthd.pnj.impl.define.*;
 import xfacthd.pnj.impl.util.FormatConverter;
 
@@ -58,20 +59,15 @@ public record DecodingImage(
 
 
 
-    public static DecodingImage create(
-            int width,
-            int height,
-            int bitDepth,
-            ColorFormat colorFormat,
-            CompressionMethod compression,
-            FilterMethod filter,
-            InterlaceMethod interlace,
-            boolean addAlpha
-    )
+    public static DecodingImage create(PngHeader header, boolean addAlpha)
     {
-        int sampleDepth = colorFormat.getSampleDepthFromBitDepth(bitDepth);
+        int width = header.width();
+        int height = header.height();
+        ColorFormat format = header.colorFormat();
+        int bitDepth = header.bitDepth();
+        int sampleDepth = format.getSampleDepthFromBitDepth(bitDepth);
         int bytesPerElem = Math.max(sampleDepth / 8, 1);
-        int bytesPerPixel = colorFormat.getBytePerPixel(bytesPerElem, addAlpha);
+        int bytesPerPixel = format.getBytePerPixel(bytesPerElem, addAlpha);
         byte[] pixels = new byte[width * height * bytesPerPixel];
 
         return new DecodingImage(
@@ -79,10 +75,10 @@ public record DecodingImage(
                 height,
                 bitDepth,
                 sampleDepth,
-                colorFormat,
-                compression,
-                filter,
-                interlace,
+                format,
+                header.compression(),
+                header.filter(),
+                header.interlace(),
                 new IdentityHashMap<>(),
                 pixels
         );

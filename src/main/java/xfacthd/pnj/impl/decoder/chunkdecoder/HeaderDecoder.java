@@ -1,7 +1,7 @@
 package xfacthd.pnj.impl.decoder.chunkdecoder;
 
-import xfacthd.pnj.api.define.ColorFormat;
-import xfacthd.pnj.api.define.DecoderOption;
+import xfacthd.pnj.api.data.PngHeader;
+import xfacthd.pnj.api.define.*;
 import xfacthd.pnj.impl.data.Chunk;
 import xfacthd.pnj.impl.data.ChunkList;
 import xfacthd.pnj.impl.decoder.data.DecodingImage;
@@ -13,9 +13,8 @@ import java.io.IOException;
 
 public final class HeaderDecoder
 {
-    public static DecodingImage decode(ChunkList chunks, OptionSet<DecoderOption> optionSet) throws IOException
+    public static PngHeader decodeHeaderOnly(Chunk chunk) throws IOException
     {
-        Chunk chunk = chunks.get(0);
         if (chunk.type() != ChunkType.IHDR)
         {
             throw new IOException("First chunk is not a header chunk");
@@ -40,20 +39,29 @@ public final class HeaderDecoder
             throw new IOException("Invalid bit depth %d for color format %s".formatted(bitDepth, colorFormat));
         }
 
+        return new PngHeader(width, height, colorFormat, bitDepth, compression, filter, interlace);
+    }
+
+    public static DecodingImage decode(ChunkList chunks, OptionSet<DecoderOption> optionSet) throws IOException
+    {
+        Chunk chunk = chunks.get(0);
+        PngHeader header = decodeHeaderOnly(chunk);
+
+        ColorFormat format = header.colorFormat();
         boolean hasPalette = chunks.containsType(ChunkType.PLTE);
-        boolean canUsePalette = colorFormat == ColorFormat.RGB || colorFormat == ColorFormat.RGB_ALPHA || colorFormat == ColorFormat.PALETTE;
-        if ((hasPalette && !canUsePalette) || (!hasPalette && colorFormat.isPaletteUsed()))
+        boolean canUsePalette = format == ColorFormat.RGB || format == ColorFormat.RGB_ALPHA || format == ColorFormat.PALETTE;
+        if ((hasPalette && !canUsePalette) || (!hasPalette && format.isPaletteUsed()))
         {
             throw new IOException(hasPalette ? "Unexpected palette" : "Missing palette");
         }
 
         boolean addAlpha = chunks.containsType(ChunkType.tRNS) && !optionSet.contains(DecoderOption.IGNORE_TRANSPARENCY);
-        if (colorFormat.isAlphaUsed() && addAlpha)
+        if (format.isAlphaUsed() && addAlpha)
         {
             throw new IOException("Color formats with alpha channel don't support additional transparency chunk");
         }
 
-        return DecodingImage.create(width, height, bitDepth, colorFormat, compression, filter, interlace, addAlpha);
+        return DecodingImage.create(header, addAlpha);
     }
 
 

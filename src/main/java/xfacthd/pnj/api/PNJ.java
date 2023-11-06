@@ -1,5 +1,6 @@
 package xfacthd.pnj.api;
 
+import xfacthd.pnj.api.data.PngHeader;
 import xfacthd.pnj.api.define.DecoderOption;
 import xfacthd.pnj.impl.decoder.PNJDecoderImpl;
 import xfacthd.pnj.impl.encoder.PNJEncoderImpl;
@@ -36,6 +37,26 @@ public final class PNJ
     public static Image decode(InputStream pngStream, DecoderOption... options) throws IOException
     {
         return PNJDecoderImpl.decode(pngStream, options);
+    }
+
+    /**
+     * Decode the header of the PNG file at the given {@link Path} to a {@link PngHeader}
+     * @param pngPath The path of the PNG file
+     * @return a {@link PngHeader} containing the header metadata
+     */
+    public static PngHeader decodeHeaderOnly(Path pngPath) throws IOException
+    {
+        return PNJDecoderImpl.decodeHeaderOnly(pngPath);
+    }
+
+    /**
+     * Decode the header of the PNG file from the given {@link InputStream} to a {@link PngHeader}
+     * @param pngStream The stream providing the PNG file contents
+     * @return a {@link PngHeader} containing the header metadata
+     */
+    public static PngHeader decodeHeaderOnly(InputStream pngStream) throws IOException
+    {
+        return PNJDecoderImpl.decodeHeaderOnly(pngStream);
     }
 
     /**

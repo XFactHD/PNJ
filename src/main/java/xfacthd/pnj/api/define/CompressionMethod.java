@@ -1,5 +1,8 @@
-package xfacthd.pnj.impl.define;
+package xfacthd.pnj.api.define;
 
+/**
+ * The pixel data compression methods supported by the PNG file format
+ */
 public enum CompressionMethod
 {
     DEFLATE,
