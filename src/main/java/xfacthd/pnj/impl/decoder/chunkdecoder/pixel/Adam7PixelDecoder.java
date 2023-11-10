@@ -6,7 +6,6 @@ import xfacthd.pnj.impl.util.Util;
 
 import java.util.Arrays;
 
-//FIXME: formats with more than one byte per pixel produce artifacts
 final class Adam7PixelDecoder extends PixelDecoder
 {
     private static final int[] STARTING_ROW = new int[] { 0, 0, 4, 0, 2, 0, 1 };
@@ -108,7 +107,7 @@ final class Adam7PixelDecoder extends PixelDecoder
 
     private int calculateScanlineSize(int pass)
     {
-        int pixels = (width - STARTING_COL[pass]) / COL_INCREMENT[pass];
-        return Util.getBytesPerLine(pixels, scanlineBitDepth, elemCount);
+        int pixels = (width - STARTING_COL[pass]) / COL_INCREMENT[pass] + 1;
+        return Math.min(Util.getBytesPerLine(pixels, scanlineBitDepth, elemCount), bytesPerLineRaw);
     }
 }
