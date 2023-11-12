@@ -49,10 +49,36 @@ public record Image(int width, int height, ColorFormat colorFormat, int sampleDe
     /**
      * Convert the pixel byte array to an array of integers with packed colors
      * @param argb If true, the colors will be packed as ARGB, else the colors will be packed as RGBA
+     * @apiNote Only images with 8bit RGB or RGBA format can be converted to packed colors
      */
     public int[] toPackedPixels(boolean argb)
     {
         return FormatConverter.convertToPackedColors(this, argb);
+    }
+
+    /**
+     * Get the packed color of the pixel at the given coordinate
+     * @param x The X coordinate of the target pixel
+     * @param y The Y coordinate of the target pixel
+     * @param argb If true, the color will be packed as ARGB, else it will be packed as RGBA
+     * @apiNote Only images with 8bit RGB or RGBA format can be converted to and from packed colors
+     */
+    public int getPixel(int x, int y, boolean argb)
+    {
+        return FormatConverter.getPixel(this, x, y, argb);
+    }
+
+    /**
+     * Set the color of the pixel at the given coordinate to the given packed color
+     * @param x The X coordinate of the target pixel
+     * @param y The Y coordinate of the target pixel
+     * @param color The packed color value to write to the target pixel
+     * @param argb If true, the packed color will be interpreted as ARGB, else it will be interpreted as RGBA
+     * @apiNote Only images with 8bit RGB or RGBA format can be converted to and from packed colors
+     */
+    public void setPixel(int x, int y, int color, boolean argb)
+    {
+        FormatConverter.setPixel(this, x, y, color, argb);
     }
 
 

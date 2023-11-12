@@ -201,14 +201,10 @@ public final class FormatConverter
 
     public static int[] convertToPackedColors(Image image, boolean argb)
     {
-        ColorFormat format = image.colorFormat();
-        if (!format.isColorUsed() || image.sampleDepth() != 8)
-        {
-            throw new IllegalStateException("Only 8bit RGB and RGBA formats can be converted to packed pixels");
-        }
+        assertRGB8(image);
 
         int size = image.width() * image.height();
-        boolean hasAlpha = format == ColorFormat.RGB_ALPHA;
+        boolean hasAlpha = image.colorFormat() == ColorFormat.RGB_ALPHA;
         int bytesPerPixel = hasAlpha ? 3 : 4;
         byte[] pixels = image.pixels();
         int[] packedPixels = new int[size];
@@ -288,6 +284,62 @@ public final class FormatConverter
                             format, sampleDepth, totalBytes, pixels.length
                     )
             );
+        }
+    }
+
+    public static int getPixel(Image image, int x, int y, boolean argb)
+    {
+        assertRGB8(image);
+
+        byte[] pixels = image.pixels();
+        boolean hasAlpha = image.colorFormat().isAlphaUsed();
+        int idx = (y * image.width() + x) * (hasAlpha ? 4 : 3);
+        if (argb)
+        {
+            int alpha = hasAlpha ? (pixels[idx + 3] << 24) : 0xFF000000;
+            return alpha | (pixels[idx]) << 16 | (pixels[idx + 1] & 0xFF) << 8 | (pixels[idx + 2] & 0xFF);
+        }
+        else
+        {
+            byte alpha = hasAlpha ? pixels[idx + 3] : (byte) 0xFF;
+            return pixels[idx] << 24 | (pixels[idx + 1] & 0xFF) << 16 | (pixels[idx + 2] & 0xFF) << 8 | alpha;
+        }
+    }
+
+    public static void setPixel(Image image, int x, int y, int color, boolean argb)
+    {
+        assertRGB8(image);
+
+        byte[] pixels = image.pixels();
+        boolean hasAlpha = image.colorFormat().isAlphaUsed();
+        int idx = (y * image.width() + x) * (hasAlpha ? 4 : 3);
+        if (argb)
+        {
+            pixels[idx] = Util.uint8_t(color >> 16);
+            pixels[idx + 1] = Util.uint8_t(color >> 8);
+            pixels[idx + 2] = Util.uint8_t(color);
+            if (hasAlpha)
+            {
+                pixels[idx + 3] = Util.uint8_t(color >> 24);
+            }
+        }
+        else
+        {
+            pixels[idx] = Util.uint8_t(color >> 24);
+            pixels[idx + 1] = Util.uint8_t(color >> 16);
+            pixels[idx + 2] = Util.uint8_t(color >> 8);
+            if (hasAlpha)
+            {
+                pixels[idx + 3] = Util.uint8_t(color);
+            }
+        }
+    }
+
+    private static void assertRGB8(Image image)
+    {
+        if (!image.colorFormat().isColorUsed() || image.sampleDepth() != 8)
+        {
+            throw new IllegalStateException("Only 8bit RGB and RGBA formats can be converted to and from packed pixels");
         }
     }
 
