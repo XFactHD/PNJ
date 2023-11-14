@@ -30,10 +30,10 @@ final class Adam7PixelDecoder extends PixelDecoder
     @Override
     protected void decodeByteOrWordDepth(byte data)
     {
-        byte decoded = filter.apply(image, this, colScan, data);
-        currScanline[colScan] = decoded;
+        byte decoded = filter.apply(this, colScan, data);
+        storePixelData(colScan, decoded);
         int idx = row * bytesPerLineOut + (col * bytesPerPixelOut) + (colScan % bytesPerPixelRaw);
-        image.pixels()[idx] = decoded;
+        pixels[idx] = decoded;
 
         colScan++;
         if ((colScan % bytesPerPixelRaw == 0))
@@ -46,14 +46,14 @@ final class Adam7PixelDecoder extends PixelDecoder
     protected void decodeSubByteDepth(byte data)
     {
         int captureIdx = colScan / pixelsPerByte;
-        byte decoded = filter.apply(image, this, captureIdx, data);
-        currScanline[captureIdx] = decoded;
+        byte decoded = filter.apply(this, captureIdx, data);
+        storePixelData(captureIdx, decoded);
 
         int decodedI = Util.uint8_t(decoded);
         for (int i = pixelsPerByte - 1; i >= 0; i--)
         {
             int idx = row * bytesPerLineOut + (col * bytesPerPixelOut) + (colScan % bytesPerPixelRaw);
-            image.pixels()[idx] = (byte) ((decodedI >> (i * scanlineBitDepth)) & pixelMask);
+            pixels[idx] = (byte) ((decodedI >> (i * scanlineBitDepth)) & pixelMask);
 
             colScan++;
             if (!advance())
@@ -73,7 +73,7 @@ final class Adam7PixelDecoder extends PixelDecoder
         }
 
         scanlineComplete = true;
-        System.arraycopy(currScanline, 0, lastScanline, 0, scanlineSize);
+        advanceScanlineBuffer();
         row += ROW_INCREMENT[pass];
         col = STARTING_COL[pass];
         colScan = 0;
@@ -93,8 +93,7 @@ final class Adam7PixelDecoder extends PixelDecoder
             scanlineSize = calculateScanlineSize(pass);
             row = STARTING_ROW[pass];
             col = STARTING_COL[pass];
-            Arrays.fill(lastScanline, (byte) 0);
-            Arrays.fill(currScanline, (byte) 0);
+            Arrays.fill(scanlineBuffer, (byte) 0);
         }
 
         return false;

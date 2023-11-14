@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public abstract sealed class PixelDecoder permits NoInterlacePixelDecoder, Adam7PixelDecoder
 {
-    protected final DecodingImage image;
+    protected final byte[] pixels;
     protected final int width;
     protected final int height;
     protected final int bytesPerPixelRaw;
@@ -20,15 +20,14 @@ public abstract sealed class PixelDecoder permits NoInterlacePixelDecoder, Adam7
     protected final boolean subByte;
     protected final int pixelsPerByte;
     protected final int pixelMask;
-    protected final byte[] lastScanline;
-    protected final byte[] currScanline;
+    protected final byte[] scanlineBuffer;
     protected int scanlineSize = 0;
     protected boolean scanlineComplete = true;
     protected AdaptiveFilterType filter = null;
 
     protected PixelDecoder(DecodingImage image, int scanlineBitDepth, int bytesPerPixelRaw, int bytesPerLineRaw)
     {
-        this.image = image;
+        this.pixels = image.pixels();
         this.width = image.width();
         this.height = image.height();
         this.bytesPerPixelRaw = bytesPerPixelRaw;
@@ -39,8 +38,7 @@ public abstract sealed class PixelDecoder permits NoInterlacePixelDecoder, Adam7
         this.subByte = scanlineBitDepth < 8;
         this.pixelsPerByte = Math.max(8 / scanlineBitDepth, 1);
         this.pixelMask = ~(0xFF << scanlineBitDepth);
-        this.lastScanline = new byte[bytesPerLineRaw];
-        this.currScanline = new byte[bytesPerLineRaw];
+        this.scanlineBuffer = new byte[bytesPerLineRaw * 2];
     }
 
     public final void decode(byte[] data, int count) throws IOException
@@ -84,27 +82,33 @@ public abstract sealed class PixelDecoder permits NoInterlacePixelDecoder, Adam7
         return bytesPerPixelRaw;
     }
 
-    public final int getScanlineSize()
+    protected final void storePixelData(int idx, byte data)
     {
-        return scanlineSize;
+        scanlineBuffer[idx + scanlineSize] = data;
     }
 
-    public final int getPixelData(int idx, boolean rollover)
+    public final int getPreviousPixel(int idx)
     {
-        byte data;
-        if (idx < 0)
+        idx -= bytesPerPixelRaw;
+        if (idx >= 0)
         {
-            if (!rollover || (idx += scanlineSize) < 0)
-            {
-                return 0;
-            }
-            data = lastScanline[idx];
+            return Util.uint8_t(scanlineBuffer[idx + scanlineSize]);
         }
-        else
+        return 0;
+    }
+
+    public final int getPixelFromPreviousScanline(int idx)
+    {
+        if (idx >= 0)
         {
-            data = currScanline[idx];
+            return Util.uint8_t(scanlineBuffer[idx]);
         }
-        return Util.uint8_t(data);
+        return 0;
+    }
+
+    protected final void advanceScanlineBuffer()
+    {
+        System.arraycopy(scanlineBuffer, scanlineSize, scanlineBuffer, 0, scanlineSize);
     }
 
 

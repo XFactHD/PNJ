@@ -1,44 +1,67 @@
 package xfacthd.pnj.impl.define;
 
-import xfacthd.pnj.impl.decoder.data.DecodingImage;
 import xfacthd.pnj.impl.decoder.chunkdecoder.pixel.PixelDecoder;
 import xfacthd.pnj.impl.util.Util;
 
 public enum AdaptiveFilterType
 {
-    NONE    ((img, dec, idx, data) -> data),
-    SUB     ((img, dec, idx, data) -> data + dec.getPixelData(idx - dec.getBytesPerPixel(), false)),
-    UP      ((img, dec, idx, data) -> data + dec.getPixelData(idx - dec.getScanlineSize(), true)),
-    AVERAGE ((img, dec, idx, data) ->
+    NONE
     {
-        int left = dec.getPixelData(idx - dec.getBytesPerPixel(), false);
-        int up = dec.getPixelData(idx - dec.getScanlineSize(), true);
-        return data + ((left + up) / 2);
-    }),
-    PAETH   ((img, dec, idx, data) ->
+        @Override
+        int apply0(PixelDecoder dec, int index, int data)
+        {
+            return data;
+        }
+    },
+    SUB
     {
-        int left = dec.getPixelData(idx - dec.getBytesPerPixel(), false);
-        int up = dec.getPixelData(idx - dec.getScanlineSize(), true);
-        int leftUp = dec.getPixelData(idx - dec.getScanlineSize() - dec.getBytesPerPixel(), true);
-        return data + Util.paethPredictor(left, up, leftUp);
-    }),
+        @Override
+        int apply0(PixelDecoder dec, int index, int data)
+        {
+            return data + dec.getPreviousPixel(index);
+        }
+    },
+    UP
+    {
+        @Override
+        int apply0(PixelDecoder dec, int index, int data)
+        {
+            return data + dec.getPixelFromPreviousScanline(index);
+        }
+    },
+    AVERAGE
+    {
+        @Override
+        int apply0(PixelDecoder dec, int index, int data)
+        {
+            int left = dec.getPreviousPixel(index);
+            int up = dec.getPixelFromPreviousScanline(index);
+            return data + ((left + up) / 2);
+        }
+    },
+    PAETH
+    {
+        @Override
+        int apply0(PixelDecoder dec, int index, int data)
+        {
+            int left = dec.getPreviousPixel(index);
+            int up = dec.getPixelFromPreviousScanline(index);
+            int leftUp = dec.getPixelFromPreviousScanline(index - dec.getBytesPerPixel());
+            return data + Util.paethPredictor(left, up, leftUp);
+        }
+    },
     ;
 
     private static final AdaptiveFilterType[] TYPES = values();
     private static final int COUNT = TYPES.length;
 
-    private final Filter filter;
-
-    AdaptiveFilterType(Filter filter)
+    public final byte apply(PixelDecoder dec, int index, byte data)
     {
-        this.filter = filter;
-    }
-
-    public byte apply(DecodingImage image, PixelDecoder dec, int index, byte data)
-    {
-        int value = filter.apply(image, dec, index, Util.uint8_t(data));
+        int value = apply0(dec, index, Util.uint8_t(data));
         return (byte) ((value % 256) & 0x000000FF);
     }
+
+    abstract int apply0(PixelDecoder dec, int index, int data);
 
 
 
@@ -49,13 +72,5 @@ public enum AdaptiveFilterType
             return TYPES[typeCode];
         }
         throw new IllegalArgumentException("Invalid adaptive filter type: " + typeCode);
-    }
-
-
-
-    @FunctionalInterface
-    private interface Filter
-    {
-        int apply(DecodingImage image, PixelDecoder dec, int index, int data);
     }
 }

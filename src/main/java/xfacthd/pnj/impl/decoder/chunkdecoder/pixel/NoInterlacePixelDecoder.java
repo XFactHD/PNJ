@@ -20,9 +20,9 @@ final class NoInterlacePixelDecoder extends PixelDecoder
     @Override
     protected void decodeByteOrWordDepth(byte data)
     {
-        byte decoded = filter.apply(image, this, byteIndexRaw, data);
-        currScanline[byteIndexRaw] = decoded;
-        image.pixels()[lineStart + byteIndexOut] = decoded;
+        byte decoded = filter.apply(this, byteIndexRaw, data);
+        storePixelData(byteIndexRaw, decoded);
+        pixels[lineStart + byteIndexOut] = decoded;
 
         byteIndexRaw++;
         byteIndexOut++;
@@ -37,21 +37,21 @@ final class NoInterlacePixelDecoder extends PixelDecoder
             byteIndexOut = 0;
             lineStart += bytesPerLineOut;
             scanlineComplete = true;
-            System.arraycopy(currScanline, 0, lastScanline, 0, scanlineSize);
+            advanceScanlineBuffer();
         }
     }
 
     @Override
     protected void decodeSubByteDepth(byte data)
     {
-        byte decoded = filter.apply(image, this, byteIndexRaw, data);
-        currScanline[byteIndexRaw] = decoded;
+        byte decoded = filter.apply(this, byteIndexRaw, data);
+        storePixelData(byteIndexRaw, decoded);
 
         int idx = lineStart + (byteIndexRaw * pixelsPerByte * bytesPerPixelOut);
         int decodedI = Util.uint8_t(decoded);
         for (int i = pixelsPerByte - 1; i >= 0 && (idx - lineStart) < bytesPerLineOut; i--)
         {
-            image.pixels()[idx] = (byte) ((decodedI >> (i * scanlineBitDepth)) & pixelMask);
+            pixels[idx] = (byte) ((decodedI >> (i * scanlineBitDepth)) & pixelMask);
             idx += bytesPerPixelOut;
         }
 
@@ -61,7 +61,7 @@ final class NoInterlacePixelDecoder extends PixelDecoder
             byteIndexRaw = 0;
             lineStart += bytesPerLineOut;
             scanlineComplete = true;
-            System.arraycopy(currScanline, 0, lastScanline, 0, scanlineSize);
+            advanceScanlineBuffer();
         }
     }
 }
