@@ -31,7 +31,9 @@ test {
 
 final var INC_ONLY_FROM_DISK = [ '(PNJ|STBI)_read(\\\\d)+bitFile' ];
 final var INC_ONLY_FROM_MEMORY = [ '(PNJ|STBI)_read(\\d)+bitBuffer' ];
-final var INC_ONLY_RGBA = [ 'PNJTruecolorAlphaDirectBenchmark' ]
+final var INC_ONLY_RGBA = [ 'PNJTruecolorAlphaDirect(Progressive|Interlace)Benchmark' ]
+final var INC_ONLY_RGBA_PROF = [ 'PNJTruecolorAlphaDirect(Progressive|Interlace)Benchmark.PNJ_read(\\d)+bitBuffer' ]
+final var INC_DIFF_SIZE = [ 'PNJDifferenSizesBenchmark' ]
 
 jmh {
     includes = INC_ONLY_FROM_MEMORY
