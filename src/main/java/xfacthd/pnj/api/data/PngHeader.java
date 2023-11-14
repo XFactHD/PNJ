@@ -14,6 +14,8 @@ import xfacthd.pnj.api.define.InterlaceMethod;
  * @param compression The compression method used to compress the pixel data
  * @param filter The scanline pre-filter method applied to the scanlines
  * @param interlace The interlace method applied to the scanlines
+ * @apiNote The format and bit depth may be different from the format and sample depth of a fully decoded image,
+ *          due to de-palettization and additional processing such as transparency and background insertion
  */
 public record PngHeader(
         int width,
