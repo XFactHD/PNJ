@@ -9,13 +9,14 @@ import java.util.zip.Inflater;
 
 public final class Decompressor
 {
-    public static void decompressInto(ChunkList chunks, PixelDecoder decoder) throws IOException
+    public static int decompressInto(ChunkList chunks, PixelDecoder decoder, int startIdx) throws IOException
     {
         Inflater inflater = new Inflater();
         byte[] result = new byte[32768];
-        for (int i = chunks.firstIndexOfType(ChunkType.IDAT); i < chunks.size(); i++)
+        int idx = startIdx;
+        for (; idx < chunks.size(); idx++)
         {
-            Chunk chunk = chunks.get(i);
+            Chunk chunk = chunks.get(idx);
             if (chunk.type() != ChunkType.IDAT)
             {
                 break;
@@ -45,6 +46,8 @@ public final class Decompressor
             throw new IOException("Compressed data stream incomplete");
         }
         inflater.end();
+        // Return the last index the decompressor actually operated on
+        return idx - 1;
     }
 
 

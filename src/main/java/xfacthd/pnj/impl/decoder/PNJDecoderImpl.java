@@ -69,7 +69,8 @@ public final class PNJDecoderImpl
 
             DecodingImage image = HeaderDecoder.decode(chunks, optionSet);
 
-            for (int i = 1; i < chunks.size(); i++)
+            int size = chunks.size();
+            for (int i = 1; i < size; i++)
             {
                 Chunk chunk = chunks.get(i);
                 switch (chunk.type())
@@ -77,12 +78,13 @@ public final class PNJDecoderImpl
                     case PLTE -> PaletteDecoder.decode(image, chunk);
                     case bKGD -> BackgroundDecoder.decode(image, chunk, optionSet);
                     case tRNS -> TransparencyDecoder.decode(image, chunk, optionSet);
+                    case IDAT ->
+                    {
+                        PixelDecoder decoder = PixelDecoder.from(image);
+                        i = Decompressor.decompressInto(chunks, decoder, i);
+                    }
                 }
             }
-
-            // Pixel data decoding
-            PixelDecoder decoder = PixelDecoder.from(image);
-            Decompressor.decompressInto(chunks, decoder);
 
             // Pixel data post-processing according to ancillary data
             TransparencyPostProcessor.process(image, optionSet);
@@ -167,16 +169,7 @@ public final class PNJDecoderImpl
             throw new IOException("Encountered chunk type %s in incorrect position".formatted(chunkType.getName()));
         }
 
-        if (chunkType.isSupported())
-        {
-            chunks.add(new Chunk(chunkType, chunkData));
-        }
-        else
-        {
-            // Immediately discard ignored chunks, no point in keeping them in memory,
-            // but mark them as seen for ordering checks
-            chunks.markType(chunkType);
-        }
+        chunks.add(chunkType, chunkData);
         return chunkType != ChunkType.IEND;
     }
 

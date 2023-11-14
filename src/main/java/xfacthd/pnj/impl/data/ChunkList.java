@@ -2,18 +2,29 @@ package xfacthd.pnj.impl.data;
 
 import xfacthd.pnj.impl.define.ChunkType;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public final class ChunkList
 {
-    private final List<Chunk> chunks = new ArrayList<>();
+    private Chunk[] chunks = new Chunk[8];
+    private int chunkCount = 0;
     private long encounteredTypes = 0;
 
-    public void add(Chunk chunk)
+    public void add(ChunkType type, byte[] chunkData)
     {
-        markType(chunk.type());
-        chunks.add(chunk);
+        markType(type);
+
+        // Immediately discard ignored chunks, no point in keeping them in memory,
+        // but mark them as seen for ordering checks
+        if (type.isSupported())
+        {
+            if (chunkCount >= chunks.length)
+            {
+                Chunk[] newChunks = new Chunk[chunkCount * 2];
+                System.arraycopy(chunks, 0, newChunks, 0, chunkCount);
+                chunks = newChunks;
+            }
+            chunks[chunkCount] = new Chunk(type, chunkData);
+            chunkCount++;
+        }
     }
 
     public void markType(ChunkType type)
@@ -23,17 +34,17 @@ public final class ChunkList
 
     public Chunk get(int idx)
     {
-        return chunks.get(idx);
+        return chunks[idx];
     }
 
     public boolean isEmpty()
     {
-        return chunks.isEmpty();
+        return chunkCount == 0;
     }
 
     public int size()
     {
-        return chunks.size();
+        return chunkCount;
     }
 
     public boolean containsType(ChunkType type)
@@ -43,25 +54,6 @@ public final class ChunkList
 
     public ChunkType getLastType()
     {
-        if (chunks.isEmpty())
-        {
-            return null;
-        }
-        return chunks.get(chunks.size() - 1).type();
-    }
-
-    public int firstIndexOfType(ChunkType type)
-    {
-        if (containsType(type))
-        {
-            for (int i = 0; i < chunks.size(); i++)
-            {
-                if (chunks.get(i).type() == type)
-                {
-                    return i;
-                }
-            }
-        }
-        return -1;
+        return chunkCount == 0 ? null : chunks[chunkCount - 1].type();
     }
 }
