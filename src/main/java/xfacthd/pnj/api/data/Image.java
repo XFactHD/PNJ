@@ -49,11 +49,12 @@ public record Image(int width, int height, ColorFormat colorFormat, int sampleDe
     /**
      * Convert the pixel byte array to an array of integers with packed colors
      * @param argb If true, the colors will be packed as ARGB, else the colors will be packed as RGBA
+     * @param reversed If true, the colors will be packed in reversed byte order (i.e. BGRA and ABGR respectively)
      * @apiNote Only images with 8bit RGB or RGBA format can be converted to packed colors
      */
-    public int[] toPackedPixels(boolean argb)
+    public int[] toPackedPixels(boolean argb, boolean reversed)
     {
-        return FormatConverter.convertToPackedColors(this, argb);
+        return FormatConverter.convertToPackedColors(this, argb, reversed);
     }
 
     /**
@@ -89,9 +90,10 @@ public record Image(int width, int height, ColorFormat colorFormat, int sampleDe
      * @param height The height of the image
      * @param packedPixels The packed colors
      * @param argb If true, the packed colors will be interpreted as ARGB, else they will be interpreted as RGBA
+     * @param reversed If true, the packed colors will be interpreted in reversed byte order (i.e. BGRA and ABGR respectively)
      */
-    public static Image fromPackedPixels(int width, int height, int[] packedPixels, boolean argb)
+    public static Image fromPackedPixels(int width, int height, int[] packedPixels, boolean argb, boolean reversed)
     {
-        return FormatConverter.createFromPackedColors(width, height, packedPixels, argb);
+        return FormatConverter.createFromPackedColors(width, height, packedPixels, argb, reversed);
     }
 }

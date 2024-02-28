@@ -199,7 +199,7 @@ public final class FormatConverter
         }
     }
 
-    public static int[] convertToPackedColors(Image image, boolean argb)
+    public static int[] convertToPackedColors(Image image, boolean argb, boolean reversed)
     {
         assertRGB8(image);
 
@@ -208,7 +208,17 @@ public final class FormatConverter
         int bytesPerPixel = hasAlpha ? 3 : 4;
         byte[] pixels = image.pixels();
         int[] packedPixels = new int[size];
-        if (argb)
+        if (argb && reversed) // ARGB reversed byte order
+        {
+            for (int i = 0; i < size; i++)
+            {
+                int idx = i * bytesPerPixel;
+                int alpha = hasAlpha ? (pixels[idx + 3] << 24) : 0xFF000000;
+                int packed = alpha | (pixels[idx]) << 16 | (pixels[idx + 1] & 0xFF) << 8 | (pixels[idx + 2] & 0xFF);
+                packedPixels[i] = Integer.reverseBytes(packed);
+            }
+        }
+        else if (argb) // ARGB normal byte order
         {
             for (int i = 0; i < size; i++)
             {
@@ -218,7 +228,17 @@ public final class FormatConverter
                 packedPixels[i] = packed;
             }
         }
-        else
+        else if (reversed) // RGBA reversed byte order
+        {
+            for (int i = 0; i < size; i++)
+            {
+                int idx = i * bytesPerPixel;
+                byte alpha = hasAlpha ? pixels[idx + 3] : (byte) 0xFF;
+                int packed = pixels[idx] << 24 | (pixels[idx + 1] & 0xFF) << 16 | (pixels[idx + 2] & 0xFF) << 8 | alpha;
+                packedPixels[i] = Integer.reverseBytes(packed);
+            }
+        }
+        else // RGBA normal byte order
         {
             for (int i = 0; i < size; i++)
             {
@@ -231,7 +251,7 @@ public final class FormatConverter
         return packedPixels;
     }
 
-    public static Image createFromPackedColors(int width, int height, int[] packedColors, boolean argb)
+    public static Image createFromPackedColors(int width, int height, int[] packedColors, boolean argb, boolean reversed)
     {
         int size = width * height;
         if (packedColors.length != size)
@@ -241,7 +261,19 @@ public final class FormatConverter
             ));
         }
         byte[] pixels = new byte[size * 4];
-        if (argb)
+        if (argb && reversed) // ARGB reversed byte order
+        {
+            for (int i = 0; i < size; i++)
+            {
+                int idx = i * 4;
+                int value = packedColors[i];
+                pixels[idx] = (byte) ((value >> 24) & 0x000000FF);
+                pixels[idx + 1] = (byte) ((value) & 0x000000FF);
+                pixels[idx + 2] = (byte) ((value >> 8) & 0x000000FF);
+                pixels[idx + 3] = (byte) ((value >> 16) & 0x000000FF);
+            }
+        }
+        else if (argb) // ARGB normal byte order
         {
             for (int i = 0; i < size; i++)
             {
@@ -253,7 +285,14 @@ public final class FormatConverter
                 pixels[idx + 3] = (byte) ((value >> 24) & 0x000000FF);
             }
         }
-        else
+        else if (reversed) // RGBA reversed byte order
+        {
+            for (int i = 0; i < packedColors.length; i++)
+            {
+                Util.intToBytes(pixels, i * 4, Integer.reverseBytes(packedColors[i]));
+            }
+        }
+        else // RGBA normal byte order
         {
             for (int i = 0; i < packedColors.length; i++)
             {
