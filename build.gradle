@@ -1,11 +1,12 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'signing'
     id "me.champeau.jmh" version "0.7.2"
 }
 
-group = 'xfacthd.pnj'
-version = '1.0-SNAPSHOT'
+group = 'io.github.xfacthd'
+version = '1.0'
 
 project.ext.lwjglVersion = "3.3.3"
 project.ext.lwjglNatives = "natives-windows"
@@ -40,10 +41,69 @@ jmh {
     fork = 1
 }
 
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+javadoc {
+    options.tags = [ "apiNote" ]
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            artifact jar
+            from components.java
+
+            artifactId = 'pnj'
+
+            pom {
+                url = 'https://github.com/XFactHD/PNJ'
+                description = 'Straightforward PNG decoder and encoder, fully written in Java'
+                licenses {
+                    license {
+                        name = 'LGPL 3'
+                        url = 'https://github.com/XFactHD/PNJ/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'xfacthd'
+                        name = 'Dennis C'
+                        email = 'xfacthd@gmx.de'
+                    }
+                }
+                scm {
+                    url = 'https://github.com/XFactHD/PNJ'
+                    connection = 'scm:git:git://github.com/XFactHD/PNJ.git'
+                }
+                issueManagement {
+                    system = 'github'
+                    url = 'https://github.com/XFactHD/PNJ/issues'
+                }
+            }
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
         }
     }
+    repositories {
+        maven {
+            // FIXME: properly publish to Central Portal directly
+            name = 'LocalPublishMaven'
+            url = file('/publish')
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+    useGpgCmd()
 }

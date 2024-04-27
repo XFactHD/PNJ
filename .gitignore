@@ -41,3 +41,4 @@ bin/
 /testdata/external/
 /testdata/**/*_out.png
 /testdata/**/*_out.ppm
+/publish
