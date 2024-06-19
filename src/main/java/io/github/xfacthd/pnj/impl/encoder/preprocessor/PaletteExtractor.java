@@ -77,12 +77,12 @@ public final class PaletteExtractor
 
     private static int compareColor(int colorA, int colorB)
     {
-        byte alphaA = Util.uint8_t(colorA);
-        byte alphaB = Util.uint8_t(colorB);
-        int alphaComp = Byte.compare(alphaA, alphaB);
+        int alphaA = colorA & 0x000000FF;
+        int alphaB = colorB & 0x000000FF;
+        int alphaComp = Integer.compare(alphaA, alphaB);
         if (alphaComp == 0)
         {
-            return Integer.compare(colorA, colorB);
+            return Integer.compare(colorA & 0xFFFFFF00, colorB & 0xFFFFFF00);
         }
         return alphaComp;
     }

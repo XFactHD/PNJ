@@ -28,9 +28,9 @@ public final class TransparencyExtractor
         byte[] palette = image.getPalette();
         for (int i = 0; i < palette.length; i += 4)
         {
-            if (palette[i + 3] != (byte) 0xFF)
+            if (palette[i + 3] == (byte) 0xFF)
             {
-                return (i / 4) + 1;
+                return i / 4;
             }
         }
         return 0;
