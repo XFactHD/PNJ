@@ -113,16 +113,21 @@ public final class PixelEncoder
     }
 
     private static int compressIfNeeded(
-            OutputStream stream, Deflater deflater, byte[] buf, byte[] outBuf, int pointer, boolean force
+            OutputStream stream, Deflater deflater, byte[] buf, byte[] outBuf, int pointer, boolean finish
     ) throws IOException
     {
-        if (force || pointer >= INPUT_BUF_SIZE)
+        if (finish || pointer >= INPUT_BUF_SIZE)
         {
             deflater.setInput(buf, 0, pointer);
-            while (!deflater.finished() && !deflater.needsInput())
+            // Deflater#needsInput() may still return true after calling Deflater#finish() despite being irrelevant with
+            // flush mode FINISH which is automatically used after a Deflater#finish() call
+            while (!deflater.finished() && (!deflater.needsInput() || finish))
             {
                 int len = deflater.deflate(outBuf);
-                PNJEncoderImpl.encodeChunk(stream, ChunkType.IDAT, outBuf, len);
+                if (len > 0)
+                {
+                    PNJEncoderImpl.encodeChunk(stream, ChunkType.IDAT, outBuf, len);
+                }
             }
             return 0;
         }

@@ -8,7 +8,9 @@ import org.lwjgl.system.MemoryStack;
 
 import java.io.IOException;
 import java.nio.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.List;
 
 public final class TestUtil
 {
@@ -63,6 +65,103 @@ public final class TestUtil
         }
 
         Files.writeString(path, ppm.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    public static Image readFromPPM(Path path) throws IOException
+    {
+        List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8)
+                .stream()
+                .map(String::trim)
+                .filter(s -> !s.startsWith("#"))
+                .toList();
+
+        if (lines.size() < 2) throw new IOException("Invalid PPM file");
+
+        String type = lines.get(0);
+        ColorFormat format;
+        int depth;
+        int firstDataLine;
+        switch (type)
+        {
+            case "P1" ->
+            {
+                format = ColorFormat.GRAYSCALE;
+                depth = 1;
+                firstDataLine = 2;
+            }
+            case "P2" ->
+            {
+                format = ColorFormat.GRAYSCALE;
+                if (lines.size() < 3) throw new IOException("Invalid PPM file");
+                depth = parsePPMDepth(lines.get(2));
+                firstDataLine = 3;
+            }
+            case "P3" ->
+            {
+                format = ColorFormat.RGB;
+                if (lines.size() < 3) throw new IOException("Invalid PPM file");
+                depth = parsePPMDepth(lines.get(2));
+                firstDataLine = 3;
+            }
+            default -> throw new IOException("Unsupported format: " + type);
+        }
+
+        String size = lines.get(1);
+        String[] sizeParts = size.split(" ");
+        if (sizeParts.length != 2) throw new IOException("Invalid size specification: " + size);
+        int width;
+        int height;
+        try
+        {
+            width = Integer.parseInt(sizeParts[0]);
+            height = Integer.parseInt(sizeParts[0]);
+        }
+        catch (NumberFormatException e)
+        {
+            throw new IOException("Invalid size specification: " + size);
+        }
+
+        int bufSize = width * height * format.getBytePerPixel(Math.max(depth / 8, 1), false);
+        byte[] pixels = new byte[bufSize];
+        Image image = new Image(width, height, format, depth, pixels);
+
+        int byteIdx = 0;
+        for (int i = firstDataLine; i < lines.size(); i++)
+        {
+            String[] parts = lines.get(i).split(" ");
+            for (String part : parts)
+            {
+                int value;
+                try
+                {
+                    value = Integer.parseInt(part);
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new IOException("Invalid color entry %s on line %d".formatted(part, i));
+                }
+
+                if (depth == 16)
+                {
+                    pixels[byteIdx] = Util.uint8_t(value >> 8);
+                    byteIdx++;
+                }
+                pixels[byteIdx] = Util.uint8_t(value);
+                byteIdx++;
+            }
+        }
+
+        return image;
+    }
+
+    private static int parsePPMDepth(String value) throws IOException
+    {
+        return switch (value.trim())
+        {
+            case "255" -> 8;
+            case "65535" -> 16;
+            default -> throw new IOException("Invalid color depth: " + value);
+        };
     }
 
     public static Image loadComparisonImage(Path path, int depth)

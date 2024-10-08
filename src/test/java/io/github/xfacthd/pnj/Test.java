@@ -178,6 +178,7 @@ public final class Test
         // External tests (unexpectedly broken)
         //testImage("external/default"); // Incorrectly placed iCCP chunk
         //testImage("external/paper"); // Incorrectly placed iCCP chunk
+        testEncodeOnly("custom/minimap_0_0"); // Causes deflater to request input in final pass despite not needing it
         printLineIfErrored();
 
         System.out.println("Tested " + testCount + " images");
@@ -213,6 +214,37 @@ public final class Test
             try
             {
                 Files.deleteIfExists(outPpm);
+                Files.deleteIfExists(outPng);
+            }
+            catch (IOException ignored) { }
+        }
+
+        testCount++;
+    }
+
+    private static void testEncodeOnly(String fileName)
+    {
+        Path base = Path.of("./testdata/");
+        Path source = base.resolve(fileName + ".ppm");
+        Path outPng = base.resolve(fileName + "_out.png");
+        String state = "";
+
+        try
+        {
+            state = "read from ppm";
+            Image image = TestUtil.readFromPPM(source);
+            state = "encode";
+            PNJ.encode(outPng, image);
+            state = "cross-check decode";
+            PNJ.decode(outPng);
+        }
+        catch (Throwable t)
+        {
+            System.err.printf("%s: %s failed with %s\n".formatted(fileName, state, TestUtil.throwableToString(t)));
+            lastGroupErrored = true;
+
+            try
+            {
                 Files.deleteIfExists(outPng);
             }
             catch (IOException ignored) { }
