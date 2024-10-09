@@ -3,6 +3,7 @@ package io.github.xfacthd.pnj.api;
 import io.github.xfacthd.pnj.api.data.Image;
 import io.github.xfacthd.pnj.api.data.PngHeader;
 import io.github.xfacthd.pnj.api.define.DecoderOption;
+import io.github.xfacthd.pnj.api.define.EncoderOption;
 import io.github.xfacthd.pnj.impl.decoder.PNJDecoderImpl;
 import io.github.xfacthd.pnj.impl.encoder.PNJEncoderImpl;
 
@@ -78,6 +79,17 @@ public final class PNJ
     public static void encode(OutputStream pngStream, Image image) throws IOException
     {
         PNJEncoderImpl.encode(pngStream, image);
+    }
+
+    /**
+     * Encode the given {@link Image} to a PNG file and write it to the given {@link OutputStream}
+     * @param pngStream The stream to write the PNG to
+     * @param image The image to be encoded
+     * @param options The options for the encoder
+     */
+    public static void encode(OutputStream pngStream, Image image, EncoderOption... options) throws IOException
+    {
+        PNJEncoderImpl.encode(pngStream, image, options);
     }
 
 

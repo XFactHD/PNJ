@@ -1,12 +1,14 @@
 package io.github.xfacthd.pnj.impl.encoder;
 
 import io.github.xfacthd.pnj.api.data.Image;
+import io.github.xfacthd.pnj.api.define.EncoderOption;
 import io.github.xfacthd.pnj.impl.define.ChunkType;
 import io.github.xfacthd.pnj.impl.define.Constants;
 import io.github.xfacthd.pnj.impl.encoder.chunkencoder.*;
 import io.github.xfacthd.pnj.impl.encoder.data.EncodingImage;
 import io.github.xfacthd.pnj.impl.encoder.preprocessor.PaletteExtractor;
 import io.github.xfacthd.pnj.impl.encoder.preprocessor.TransparencyExtractor;
+import io.github.xfacthd.pnj.impl.util.OptionSet;
 import io.github.xfacthd.pnj.impl.util.Util;
 
 import java.io.IOException;
@@ -25,8 +27,10 @@ public final class PNJEncoderImpl
         }
     }
 
-    public static void encode(OutputStream stream, Image image) throws IOException
+    public static void encode(OutputStream stream, Image image, EncoderOption... options) throws IOException
     {
+        OptionSet<EncoderOption> optionSet = new OptionSet<>(options);
+
         EncodingImage encodingImage = new EncodingImage(image);
 
         PaletteExtractor.process(encodingImage);
@@ -36,7 +40,7 @@ public final class PNJEncoderImpl
         HeaderEncoder.encode(stream, encodingImage);
         PaletteEncoder.encode(stream, encodingImage);
         TransparencyEncoder.encode(stream, encodingImage);
-        PixelEncoder.encode(stream, encodingImage);
+        PixelEncoder.encode(stream, encodingImage, optionSet);
         encodeChunk(stream, ChunkType.IEND, EMPTY, 0);
     }
 

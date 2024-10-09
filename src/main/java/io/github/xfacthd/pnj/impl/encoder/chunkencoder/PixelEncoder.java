@@ -1,10 +1,12 @@
 package io.github.xfacthd.pnj.impl.encoder.chunkencoder;
 
 import io.github.xfacthd.pnj.api.define.ColorFormat;
+import io.github.xfacthd.pnj.api.define.EncoderOption;
 import io.github.xfacthd.pnj.impl.define.AdaptiveFilterType;
 import io.github.xfacthd.pnj.impl.define.ChunkType;
 import io.github.xfacthd.pnj.impl.encoder.PNJEncoderImpl;
 import io.github.xfacthd.pnj.impl.encoder.data.EncodingImage;
+import io.github.xfacthd.pnj.impl.util.OptionSet;
 import io.github.xfacthd.pnj.impl.util.Util;
 
 import java.io.IOException;
@@ -16,11 +18,12 @@ public final class PixelEncoder
     private static final int INPUT_BUF_SIZE = 16384;
     private static final int OUTPUT_BUF_SIZE = 8192;
 
-    public static void encode(OutputStream stream, EncodingImage image) throws IOException
+    public static void encode(OutputStream stream, EncodingImage image, OptionSet<EncoderOption> optionSet) throws IOException
     {
         byte[] inBuf = new byte[INPUT_BUF_SIZE];
         byte[] outBuf = new byte[OUTPUT_BUF_SIZE];
-        Deflater deflater = new Deflater();
+        int compressionLevel = getCompressionLevel(optionSet);
+        Deflater deflater = new Deflater(compressionLevel);
         int pointer;
 
         boolean palette = image.getColorFormat() == ColorFormat.PALETTE;
@@ -37,6 +40,23 @@ public final class PixelEncoder
         deflater.finish();
         compressIfNeeded(stream, deflater, inBuf, outBuf, pointer, true);
         deflater.end();
+    }
+
+    private static int getCompressionLevel(OptionSet<EncoderOption> optionSet)
+    {
+        if (optionSet.contains(EncoderOption.BEST_COMPRESSION))
+        {
+            return Deflater.BEST_COMPRESSION;
+        }
+        if (optionSet.contains(EncoderOption.FAST_COMPRESSION))
+        {
+            return Deflater.BEST_SPEED;
+        }
+        if (optionSet.contains(EncoderOption.NO_COMPRESSION))
+        {
+            return Deflater.NO_COMPRESSION;
+        }
+        return Deflater.DEFAULT_COMPRESSION;
     }
 
     private static int encodeByteOrWord(
