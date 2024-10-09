@@ -29,4 +29,13 @@ public enum EncoderOption
      * If neither this nor {@link #NO_COMPRESSION} or {@link #FAST_COMPRESSION} is specified, then the default compression level is used.
      */
     BEST_COMPRESSION,
+    /**
+     * If specified, the encoder will not attempt to palettize the image, increasing speed at the cost of potentially increased file size.
+     */
+    DISABLE_PALETTE_EXTRACT,
+    /**
+     * If specified and the image has not been palettized, the encoder will not attempt to extract the alpha channel into the separate
+     * tRNS chunk if the image contains an alpha channel, increasing speed at the cost of potentially increased file size.
+     */
+    DISABLE_ALPHA_EXTRACT,
 }

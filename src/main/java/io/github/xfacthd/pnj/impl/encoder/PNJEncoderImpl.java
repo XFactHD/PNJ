@@ -33,8 +33,14 @@ public final class PNJEncoderImpl
 
         EncodingImage encodingImage = new EncodingImage(image);
 
-        PaletteExtractor.process(encodingImage);
-        TransparencyExtractor.process(encodingImage);
+        if (!optionSet.contains(EncoderOption.DISABLE_PALETTE_EXTRACT))
+        {
+            PaletteExtractor.process(encodingImage);
+        }
+        if (encodingImage.getPalette() != null || !optionSet.contains(EncoderOption.DISABLE_ALPHA_EXTRACT))
+        {
+            TransparencyExtractor.process(encodingImage);
+        }
 
         stream.write(Constants.PNG_MAGIC);
         HeaderEncoder.encode(stream, encodingImage);
